@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Buku;
+use Illuminate\Console\Command;
+use GuzzleHttp\Client as GuzzleHttpClient;
+use voku\helper\HtmlDomParser;
+
+class BukuGrabber extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'grabber:buku';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Grab Info Buku';
+
+    /**
+     * Create a new command instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
+    public function handle()
+    {
+        $page = 1501;
+        //1864
+        $arr = [];
+        $data = [];
+        for ($i = $page; $i < 1864  + 1; $i++) {
+            $url[$i]  = 'https://ebooks.gramedia.com/id/buku?language=2&page=' . $i;
+            $this->info($url[$i]);
+            $client = new GuzzleHttpClient();
+            $response = $client->request('GET', $url[$i], ['verify' => false]);
+            $html = $response->getBody()->getContents();
+            $dom = HtmlDomParser::str_get_html($html);
+            $grabber = $dom->findOne('#product_list');
+            foreach ($grabber as $key => $row) {
+                if ($row->findOne('.desc .title')->plaintext != "") {
+                    $data['data'][] = [
+                        "judul" =>  $row->findOne('.desc .title')->plaintext,
+                        "penulis" => $row->findOne('.desc .date')->plaintext,
+                    ];
+                }
+            }
+        }
+
+        foreach ($data['data'] as $key => $item) {
+            $arr['judul'] = $item['judul'];
+            $arr['penulis'] = $item['penulis'];
+            $data = Buku::create($arr);
+            $this->info($data->judul);
+        }
+    }
+}
