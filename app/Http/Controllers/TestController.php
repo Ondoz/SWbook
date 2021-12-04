@@ -7,6 +7,7 @@ use Goutte\Client;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use voku\helper\HtmlDomParser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TestController extends Controller
 {
@@ -14,33 +15,49 @@ class TestController extends Controller
     {
         $data = [];
         $url = [];
-        for ($i = 0; $i < 2 + 1; $i++) {
-            $url[$i]  = 'https://ebooks.gramedia.com/id/buku?language=2&page=' . $i;
+        $arr = [];
+        $buku = Buku::where('slug', "hki-satu-malam-yang-tertunda-his-greek-wedding-night-debt")->get();
+        foreach ($buku as $keys => $value) {
+            $url = 'https://ebooks.gramedia.com/id/' . $value->slug;
             $client = new GuzzleHttpClient();
 
-            $response = $client->request('GET', $url[$i], ['verify' => false]);
+            $response = $client->request('GET', $url, ['verify' => false]);
 
             $html = $response->getBody()->getContents();
 
             $dom = HtmlDomParser::str_get_html($html);
-            // echo $dom->findOne('#product_list')->text();
-            $grabber = $dom->findOne('#product_list');
-            foreach ($grabber as $key => $row) {
-                if ($row->findOne('.desc .title')->plaintext != "") {
-                    $data['data'][] = [
-                        "judul" =>  $row->findOne('.desc .title')->plaintext,
-                        "penulis" => $row->findOne('.desc .date')->plaintext,
-                    ];
+
+            $grabber_description = $dom->findOne('.sc_1')->plaintext;
+
+            // Grab Tanggal Rilis
+            $text_after = Str::after($grabber_description, ':',);
+            $data[$keys]['tgl_rilis'] = Str::before($text_after, '.');
+            // Grab Discription
+            $data[$keys]['description'] = Str::after($grabber_description, '.');
+
+            // Grab Details
+            $grabber_detail = $dom->findOne('.sc_2 table');
+            foreach ($grabber_detail as $key => $row) {
+                if ($row != "") {
+                    $data[$keys][$row->findOne('tr td')->plaintext] =  Str::after($row->findOne('tr', 1)->plaintext, ':');
                 }
             }
-        }
 
-        foreach ($data['data'] as $key => $item) {
-            Buku::create([
-                'judul' => $data['data'][$key]['judul'],
-                'penulis' => $data['data'][$key]['penulis']
-            ]);
+            $data[$keys] = array_map('trim', $data[$keys]);
+
+            $arr[] = [
+                'tgl_rilis' => date('Y-m-d', strtotime($data[$keys]['tgl_rilis'])),
+                'bahasa' => $data[$keys]['Bahasa'],
+                'negara' => $data[$keys]['Negara'],
+                'penerbit' => $data[$keys]['Penerbit'],
+                'jumlah_halaman' => (int) isset($data[$keys]['Jumlah halaman']) ?? 0,
+                'description' => $data[$keys]['description']
+            ];
+
+            // $first_buku = Buku::where('slug', $value->slug)->first();
+            // $first_buku->detail_buku()->create($arr);
         }
+        return $arr;
     }
 
     protected function getArray(string $html)

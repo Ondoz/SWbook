@@ -40,11 +40,11 @@ class BukuGrabber extends Command
      */
     public function handle()
     {
-        $page = 1501;
+        $page = 100;
         //1864
         $arr = [];
         $data = [];
-        for ($i = $page; $i < 1864  + 1; $i++) {
+        for ($i = $page; $i < $page  + 1; $i++) {
             $url[$i]  = 'https://ebooks.gramedia.com/id/buku?language=2&page=' . $i;
             $this->info($url[$i]);
             $client = new GuzzleHttpClient();

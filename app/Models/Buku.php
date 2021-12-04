@@ -23,4 +23,9 @@ class Buku extends Model
             ->generateSlugsFrom('judul')
             ->saveSlugsTo('slug');
     }
+
+    public function detail_buku()
+    {
+        return $this->hasOne(DetailBuku::class);
+    }
 }
