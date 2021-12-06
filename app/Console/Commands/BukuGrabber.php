@@ -6,6 +6,7 @@ use App\Models\Buku;
 use Illuminate\Console\Command;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use voku\helper\HtmlDomParser;
+use Illuminate\Support\Str;
 
 class BukuGrabber extends Command
 {
@@ -40,11 +41,11 @@ class BukuGrabber extends Command
      */
     public function handle()
     {
-        $page = 100;
+        $page = 0;
         //1864
         $arr = [];
         $data = [];
-        for ($i = $page; $i < $page  + 1; $i++) {
+        for ($i = $page; $i < 1866  + 1; $i++) {
             $url[$i]  = 'https://ebooks.gramedia.com/id/buku?language=2&page=' . $i;
             $this->info($url[$i]);
             $client = new GuzzleHttpClient();
@@ -56,6 +57,7 @@ class BukuGrabber extends Command
                 if ($row->findOne('.desc .title')->plaintext != "") {
                     $data['data'][] = [
                         "judul" =>  $row->findOne('.desc .title')->plaintext,
+                        "slug" => $row->findOne('.desc a')->href,
                         "penulis" => $row->findOne('.desc .date')->plaintext,
                     ];
                 }
@@ -64,9 +66,10 @@ class BukuGrabber extends Command
 
         foreach ($data['data'] as $key => $item) {
             $arr['judul'] = $item['judul'];
+            $arr['slug'] = Str::afterLast($item['slug'], '/');
             $arr['penulis'] = $item['penulis'];
             $data = Buku::create($arr);
-            $this->info($data->judul);
         }
+        // $this->info($data->judul);
     }
 }

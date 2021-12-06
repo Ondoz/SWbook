@@ -16,11 +16,17 @@ class DetailBuku extends Model
         'penerbit',
         'negara',
         'jumlah_halaman',
-        'description'
+        'description',
+        'kategori_id'
     ];
 
     public function buku()
     {
         return $this->belongsTo(Buku::class);
+    }
+
+    public function kategori()
+    {
+        return $this->belongsTo(Kategori::class);
     }
 }

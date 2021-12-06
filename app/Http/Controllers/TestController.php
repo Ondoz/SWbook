@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Buku;
+use App\Models\Kategori;
 use Goutte\Client;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use voku\helper\HtmlDomParser;
@@ -27,31 +28,22 @@ class TestController extends Controller
 
             $dom = HtmlDomParser::str_get_html($html);
 
-            $grabber_description = $dom->findOne('.sc_1')->plaintext;
-
-            // Grab Tanggal Rilis
-            $text_after = Str::after($grabber_description, ':',);
-            $data[$keys]['tgl_rilis'] = Str::before($text_after, '.');
-            // Grab Discription
-            $data[$keys]['description'] = Str::after($grabber_description, '.');
-
             // Grab Details
-            $grabber_detail = $dom->findOne('.sc_2 table');
-            foreach ($grabber_detail as $key => $row) {
-                if ($row != "") {
-                    $data[$keys][$row->findOne('tr td')->plaintext] =  Str::after($row->findOne('tr', 1)->plaintext, ':');
-                }
-            }
+            $data[$keys]['image'] = $dom->findOne('#zoom img')->src;
+            // foreach ($grabber_detail as $key => $row) {
+            //     if ($row != "") {
+            //         $data[$keys][$row->findOne('tr td')->plaintext] =  Str::after($row->findOne('tr', 1)->plaintext, ':');
+            //     }
+            // }
 
-            $data[$keys] = array_map('trim', $data[$keys]);
+            // $data[$keys] = array_map('trim', $data[$keys]);
+            // $url = 'http://medialibrary.spatie.be/assets/images/mountain.jpg';
+            $value
+                ->addMediaFromUrl($data[$keys]['image'])
+                ->toMediaCollection();
 
             $arr[] = [
-                'tgl_rilis' => date('Y-m-d', strtotime($data[$keys]['tgl_rilis'])),
-                'bahasa' => $data[$keys]['Bahasa'],
-                'negara' => $data[$keys]['Negara'],
-                'penerbit' => $data[$keys]['Penerbit'],
-                'jumlah_halaman' => (int) isset($data[$keys]['Jumlah halaman']) ?? 0,
-                'description' => $data[$keys]['description']
+                'image' => $data[$keys]['image'],
             ];
 
             // $first_buku = Buku::where('slug', $value->slug)->first();
@@ -86,5 +78,32 @@ class TestController extends Controller
         $html = $response->getBody()->getContents();
 
         return $html;
+
+        // $page = 1;
+        // //1864
+        // $arr = [];
+        // $data = [];
+        // $url  = 'https://ebooks.gramedia.com/id/buku';
+        // // $this->info($url);
+        // $client = new GuzzleHttpClient();
+        // $response = $client->request('GET', $url, ['verify' => false]);
+        // $html = $response->getBody()->getContents();
+        // $dom = HtmlDomParser::str_get_html($html);
+        // $grabber = $dom->findOne('.selwrap .filtersel')->find('option');
+        // foreach ($grabber as $elemen) {
+        //     if ($elemen->value != "0") {
+        //         $data['data'][] = [
+        //             "name" =>  $elemen->plaintext,
+        //             "slug" => $elemen->value,
+        //         ];
+        //     }
+        // }
+        // foreach ($data['data'] as $key => $item) {
+        //     $arr['name'] = $item['name'];
+        //     $arr['slug'] = $item['slug'];
+        //     $data = Kategori::create($arr);
+        // }
+
+        // return $data;
     }
 }
