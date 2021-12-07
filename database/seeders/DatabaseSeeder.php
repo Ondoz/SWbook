@@ -17,5 +17,6 @@ class DatabaseSeeder extends Seeder
         $this->call(BukusTableSeeder::class);
         $this->call(KategorisTableSeeder::class);
         $this->call(DetailBukusTableSeeder::class);
+        $this->call(MediaTableSeeder::class);
     }
 }
